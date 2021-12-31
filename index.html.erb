@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>index</title>
+  </head>
+  <body>
+    <% require "pg" %>
+    <% connection = PG::connect(dbname: "goya") %>
+    <% connection.internal_encoding = "utf-8" %>
+    <% self_consumption = connection.exec(
+      "SELECT weight, give_for
+      FROM crops
+      WHERE give_for != '自家消費'
+      ORDER BY give_for, weight DESC;"
+      ) %>
+    <% poor_quality = connection.exec(
+      "SELECT weight, give_for
+      FROM crops
+      WHERE quality = false
+      ORDER BY give_for, weight DESC;"
+      ) %>
+
+    <h1>ゴーヤ収穫情報</h1>
+    <h2>譲渡先が自家消費ではないもののゴーヤ情報</h2>
+    <% self_consumption_data = []%>
+    <% self_consumption.each do |record| %>
+      <% self_consumption_data << "#{record["weight"]} #{record["give_for"]}" %>
+    <% end %>
+    <form action="/goya.cgi" method="post">
+      <input type="text" name="goya" value="<%= self_consumption_data.join("<br>") %>" >
+      <input type="submit" value="送信">
+    </form>
+    <br><br>
+    <h2>品質が悪いものゴーヤ情報</h2>
+    <% poor_quality_data = []%>
+    <% poor_quality.each do |record| %>
+      <% poor_quality_data << "#{record["weight"]} #{record["give_for"]}" %>
+    <% end %>
+    <form action="/goya.cgi" method="post">
+      <input type="text" name="goya" value="<%= poor_quality_data.join("<br>") %>" >
+      <input type="submit" value="送信">
+    </form>
+    <br><br>
+    <a href="/test">testへ</a>
+  </body>
+</html>
